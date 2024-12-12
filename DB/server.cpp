@@ -53,7 +53,7 @@ void requestProcessing(const int clientSocket, const sockaddr_in& clientAddress,
         if (result.empty() || result == "") {
             result = "EMPTY";
         }
-        cout << "send to [" << clientAddress.sin_addr.s_addr << "] \"" << result << '\"' << endl;
+        //cout << "send to [" << clientAddress.sin_addr.s_addr << "] \"" << result << '\"' << endl;
         send(clientSocket, result.c_str(), result.size(), 0);
     }
     close(clientSocket);

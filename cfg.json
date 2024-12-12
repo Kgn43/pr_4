@@ -7,7 +7,7 @@
         "USDC"
     ],
     "DB_ip": "10.241.123.254",
-    "DB_port": 7432,
-    "stock_exchange_ip": "127.0.0.1",
-    "stock_exchange_port": 1488
+    "DB_port": 7433,
+    "stock_exchange_ip": "10.241.123.254",
+    "stock_exchange_port": 7138
 }

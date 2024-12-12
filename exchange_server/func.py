@@ -167,7 +167,7 @@ def update():
         first_order = Order(get_selected(f"select order.order_id order.user_id order.pair_id order.quantity order.price order.type order.closed from order where order.order_id = {first_order_id}"))
         for second_order_id in orders:
             second_order = Order(get_selected(f"select order.order_id order.user_id order.pair_id order.quantity order.price order.type order.closed from order where order.order_id = {second_order_id}"))
-            if ((first_order.Type != second_order.Type) and not first_order.closed and not second_order.closed and (first_order.pair_id == second_order.pair_id)):
+            if ((first_order.Type != second_order.Type) and not first_order.closed and not second_order.closed and (first_order.pair_id == second_order.pair_id and (first_order.user_id != second_order.user_id))):
                 if (first_order.Type == "sell"):
                     order_process(first_order, second_order)
                 else:
@@ -213,7 +213,7 @@ def new_order(key, pair_id, quantity, price, Type):
     new_order_id = randint(0, 1000000000)
     safe_send(f"insert into order values {new_order_id} {user_id} {pair_id} {quantity} {price} {Type}")
     update()
-    return {"ordre_id": new_order_id}
+    return {"order_id": new_order_id}
 
 
 def get_order():
