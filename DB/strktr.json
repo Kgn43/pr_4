@@ -1,0 +1,11 @@
+{
+  "name": "business",
+  "tuples_limit": 1000,
+  "structure": {
+    "users": [ "users.user_id", "users.user_name", "users.key" ],
+    "order": [ "order.order_id", "order.user_id", "order.pair_id", "order.quantity", "order.price", "order.type", "order.closed" ],
+    "pair": ["pair.pair_id", "pair.first_lot_id", "pair.second_lot_id"],
+    "lot": ["lot.lot_id", "lot.name"],
+    "user_lot": ["user_lot.user_id", "user_lot.lot_id", "user_lot.quantity"]
+  }
+}
