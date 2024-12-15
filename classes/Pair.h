@@ -15,7 +15,7 @@ public:
     }
 
     friend ostream& operator<<(ostream& os, const Pair& pr) {
-        os << pr.key << ", " << pr.value;
+        os  << "[" << pr.key << ", " << pr.value << "]";
         return os;
     }
 

@@ -16,7 +16,7 @@ add_executable(DB
         DB/select.cpp
         DB/userQuery.cpp
         classes/arr.cpp
-        ip.h)
+        )
 
 
 target_link_libraries(DB PRIVATE nlohmann_json::nlohmann_json)

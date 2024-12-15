@@ -107,10 +107,15 @@ def spend_money(user_id, lot_id, money):
 
 
 class Order:
-    def __init__(self, input):
-        if (input == None):
+    def __init__(self, id, user_id, pair_id, quantity, price, Type):
+        if not id or not user_id or not pair_id or not quantity or not price or not Type:
             return None
-        self.id, self.user_id, self.pair_id, self.quantity, self.price, self.Type, self.closed = input.strip().split(';')
+        self.id = id
+        self.user_id = user_id
+        self.pair_id = pair_id
+        self.quantity = quantity
+        self.price = price
+        self.Type = Type
 
 
 def order_process(seller : Order, buyer : Order):
@@ -128,6 +133,7 @@ def order_process(seller : Order, buyer : Order):
         second_lot_id = int(get_selected(f"select lot.lot_id from lot where lot.name = {second_lot_name}"))
         get_money(seller.user_id, second_lot_id, float(buyer.quantity) * float(buyer.price))
         get_money(buyer.user_id, first_lot_id, float(seller.quantity) * float(seller.price))
+        return {}
     elif float(seller.quantity) > float(buyer.quantity):
         safe_send(f"delete from order where order.order_id = {seller.id}")
         safe_send(f"delete from order where order.order_id = {buyer.id}")
@@ -141,7 +147,9 @@ def order_process(seller : Order, buyer : Order):
         get_money(seller.user_id, second_lot_id, float(buyer.quantity) * float(buyer.price))
         get_money(buyer.user_id, first_lot_id, float(seller.quantity) * float(seller.price))
         #!!!
-        safe_send(f"insert into order values {randint(0, 1000000000)} {seller.user_id} {seller.pair_id} {float(seller.quantity) - float(buyer.quantity)} {seller.price} {seller.Type} {seller.closed}")
+        new_id = randint(0, 1000000000)
+        safe_send(f"insert into order values {new_id} {seller.user_id} {seller.pair_id} {round(float(seller.quantity) - float(buyer.quantity),2)} {seller.price} {seller.Type} None")
+        return Order(new_id, seller.user_id, seller.pair_id, round(float(seller.quantity) - float(buyer.quantity),2), seller.price, seller.Type)
     else:
         safe_send(f"delete from order where order.order_id = {seller.id}")
         safe_send(f"delete from order where order.order_id = {buyer.id}")
@@ -155,26 +163,35 @@ def order_process(seller : Order, buyer : Order):
         get_money(seller.user_id, second_lot_id, float(buyer.quantity) * float(buyer.price))
         get_money(buyer.user_id, first_lot_id, float(seller.quantity) * float(seller.price))
         #!!!
-        safe_send(f"insert into order values {randint(0, 1000000000)} {buyer.user_id} {buyer.pair_id} {float(buyer.quantity) - float(seller.quantity)} {buyer.price} {buyer.Type} {buyer.closed}")
+        new_id = randint(0, 1000000000)
+        safe_send(f"insert into order values {new_id} {buyer.user_id} {buyer.pair_id} {round(float(buyer.quantity) - float(seller.quantity),2)} {buyer.price} {buyer.Type} None")
+        return Order(new_id, buyer.user_id, buyer.pair_id, round(float(buyer.quantity) - float(seller.quantity),2), buyer.price, buyer.Type)
 
 
-def update():
-    orders = get_selected(f"select order.order_id from order")
-    if not orders:
+def update(pair_id):
+    input = get_selected(f"select order.order_id order.user_id order.pair_id order.quantity order.price order.type from order where order.pair_id = {pair_id} AND order.closed = None")
+    if not input:
         return
-    orders = orders.strip().split('\n')
-    for first_order_id in orders:
-        first_order = Order(get_selected(f"select order.order_id order.user_id order.pair_id order.quantity order.price order.type order.closed from order where order.order_id = {first_order_id}"))
-        for second_order_id in orders:
-            second_order = Order(get_selected(f"select order.order_id order.user_id order.pair_id order.quantity order.price order.type order.closed from order where order.order_id = {second_order_id}"))
-            if ((first_order.Type != second_order.Type) and not first_order.closed and not second_order.closed and (first_order.pair_id == second_order.pair_id and (first_order.user_id != second_order.user_id))):
-                if (first_order.Type == "sell"):
-                    order_process(first_order, second_order)
+    input = input.strip().split('\n')
+    orders = []
+    for record in input:
+        id, user_id, pair_id, quantity, price, Type = record.split(';')
+        orders.append(Order(id, user_id, pair_id, quantity, price, Type))
+
+    for first_order in orders:
+        for second_order in orders:
+            if (first_order.Type != second_order.Type) and (first_order.pair_id == second_order.pair_id) and (first_order.user_id != second_order.user_id):
+                if first_order.Type == "sell":
+                    new_order = order_process(first_order, second_order)
                 else:
-                    order_process(second_order, first_order)
+                    new_order = order_process(second_order, first_order)
+                orders.remove(first_order)
+                orders.remove(second_order)
+                if new_order:
+                    orders.append(new_order)
 
 
-            
+
 
 
 def get_money(user_id, lot_id, money):
@@ -209,10 +226,9 @@ def new_order(key, pair_id, quantity, price, Type):
         spend_money(user_id, first_lot_id, float(quantity)*float(price))
     else:
         spend_money(user_id, second_lot_id, float(quantity)*float(price))
-    update()
     new_order_id = randint(0, 1000000000)
-    safe_send(f"insert into order values {new_order_id} {user_id} {pair_id} {quantity} {price} {Type}")
-    update()
+    safe_send(f"insert into order values {new_order_id} {user_id} {pair_id} {quantity} {price} {Type} None")
+    update(pair_id)
     return {"order_id": new_order_id}
 
 
@@ -223,7 +239,7 @@ def get_order():
     records = input.strip().split("\n")
     result = []
     for record in records:
-        order_id, user_id, lot_id, quantity, Type, price, closed = record.split(";")
+        order_id, user_id, lot_id, quantity, price, Type, closed = record.split(";")
         result.append({
             "order_id": order_id,
             "user_id": user_id,
@@ -247,18 +263,30 @@ def get_lot():
             "name": name
         })
     return result
-    
+
+
+def get_id(mtx, word):
+    for i, line in enumerate(mtx):
+        if word in line:
+            return i, line.index(word)
+
+
 
 def get_pair():
     input = get_selected(f"select pair.pair_id pair.first_lot_id pair.second_lot_id from pair")
+    lots = get_selected(f"select lot.lot_id lot.name from lot")
+    lots = lots.strip().split("\n")
+    lots = [lot.split(';') for lot in lots]
     records = input.strip().split("\n")
     result = []
     for record in records:
         lot_id, first, second = record.split(";")
+        line1, index1 = get_id(lots, first)
+        line2, index2 = get_id(lots, second)
         result.append({
             "pair_id": lot_id,
-            "sale_lot_id": first,
-            "buy_lot_id": second
+            "sale_lot_id": lots[line1][0],
+            "buy_lot_id": lots[line2][0]
         })
     return result
 
@@ -283,7 +311,7 @@ def delete_order(user_key, order_id) -> None:
         get_money(user_id, second_lot_id, float(quantity)*float(price))
     safe_send(f"delete from order where order.order_id = {order_id} AND order.user_id = {user_id}")
 
-    
+
 
 def get_balance(user_key):
     if not user_key:
